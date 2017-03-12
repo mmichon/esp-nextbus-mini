@@ -16,64 +16,44 @@ Adafruit_SSD1306 display(OLED_RESET);
 
 WiFiClient client;
 
-
 void setup() {
     Serial.begin(9600);
 
     // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 64x48)
-    // Clear the buffer.
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setCursor(0,0);
-    display.display();
+
+    // clear the display buffer
+    clear_display();
 
     // get on wifi
     setup_wifi();
-}
 
-void loop() {
-    // clear display
-    display.clearDisplay();
-    display.setTextColor(WHITE);
-    display.setCursor(0,0);
-
+    // download the predictions once we're connected
     String prediction_xml = download_prediction_xml();
     const char* xml = prediction_xml.c_str();
 
+    // let's parse out a couple predictions!
     if(strcmp(xml, "ERROR") != 0) {
         int first_prediction, second_prediction;
         get_prediction(xml, first_prediction, second_prediction);
 
-        // display predictions
-        display.setTextSize(1);
-        display.println("Next bus:");
-        display.println();
-
-        display.setTextSize(3);
-        display.print(first_prediction);
-        display.setTextSize(2);
-        display.print(second_prediction);
-        display.setTextSize(3);
-        display.println();
-
-        display.setTextSize(1);
-        display.println("minutes");
+        display_predictions(first_prediction, second_prediction);
     }
     else {
-        // display error in case of problems getting predictions
-        display.setTextSize(2);
-        display.println("Error");
-
-        display.setTextSize(1);
-        display.println("No pred!");
+        display_error();
     }
 
     display.display();
 
-    delay(POLL_SECONDS * 1000);
+    // this requires GPIO16 (D0) to be shorted to RST
+    Serial.println("Going to sleep.");
+    ESP.deepSleep(POLL_SECONDS * 1000000, WAKE_RF_DEFAULT);
 }
 
+void loop() {
+}
+
+// connects to wifi
 void setup_wifi() {
     delay(10);
     Serial.println();
@@ -82,7 +62,7 @@ void setup_wifi() {
 
     WiFi.begin(ssid, password);
 
-    display.print("Hello.");
+    display.print("Getting.");
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         display.print(".");
@@ -96,6 +76,7 @@ void setup_wifi() {
     Serial.println(WiFi.localIP());
 }
 
+// reconnects to wifi
 void reconnect() {
     while (WiFi.status() != WL_CONNECTED) {
         Serial.println();
@@ -106,6 +87,41 @@ void reconnect() {
         delay(500);
         Serial.print(".");
     }
+}
+
+// clears the display and sets basic settings
+void clear_display(){
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+}
+
+// displays predictions on the display
+void display_predictions(int first_prediction, int second_prediction) {
+        clear_display();
+
+        display.setTextSize(1);
+        display.println("Next bus:");
+        display.println();
+
+        display.setTextSize(3);
+        display.print(first_prediction);
+        display.setTextSize(2);
+        display.print(second_prediction);
+        display.setTextSize(3);
+        display.println();
+
+        display.setTextSize(1);
+        display.println("minutes");
+}
+
+// display error in case of problems getting predictions
+void display_error(){
+    display.setTextSize(2);
+    display.println("Error");
+
+    display.setTextSize(1);
+    display.println("No pred!");
 }
 
 // gets the bus prediction XML from NextBus
