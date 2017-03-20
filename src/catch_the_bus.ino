@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>   // git clone https://github.com/mcauser/Adafruit_SSD1306/tree/esp8266-64x48 lib
 #include <Adafruit_GFX.h>       // pio lib install 13
+#include <WiFiManager.h>        // pio lib install 567
 #include <tinyxml2.h>           // git clone https://github.com/leethomason/tinyxml2 lib
 #include "config.h"
 
@@ -14,7 +15,10 @@ Adafruit_SSD1306 display(OLED_RESET);
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
+
+WiFiManager wifiManager;
 WiFiClient client;
+
 
 void setup() {
     Serial.begin(9600);
@@ -22,11 +26,8 @@ void setup() {
     // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 64x48)
 
-    // clear the display buffer
-    clear_display();
-
-    // get on wifi
-    setup_wifi();
+    // configure wifi on first connect otherwise just connect to the last known
+    wifiManager.autoConnect();
 
     // download the predictions once we're connected
     String prediction_xml = download_prediction_xml();
@@ -51,42 +52,6 @@ void setup() {
 }
 
 void loop() {
-}
-
-// connects to wifi
-void setup_wifi() {
-    delay(10);
-    Serial.println();
-    Serial.print("Connecting to ");
-    Serial.println(ssid);
-
-    WiFi.begin(ssid, password);
-
-    display.print("Getting.");
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        display.print(".");
-        display.display();
-        Serial.print(".");
-    }
-
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-}
-
-// reconnects to wifi
-void reconnect() {
-    while (WiFi.status() != WL_CONNECTED) {
-        Serial.println();
-        Serial.print("Reconnecting");
-
-        WiFi.begin(ssid, password);
-
-        delay(500);
-        Serial.print(".");
-    }
 }
 
 // clears the display and sets basic settings
@@ -117,6 +82,8 @@ void display_predictions(int first_prediction, int second_prediction) {
 
 // display error in case of problems getting predictions
 void display_error(){
+    clear_display();
+
     display.setTextSize(2);
     display.println("Error");
 

@@ -1,7 +1,3 @@
-// replace with your wifi info
-const char* ssid = "IfWiCouldTurnBackFi";
-const char* password = "8675309";
-
 // replace this with your netxtbus.com stop info
 // you may have to remove the leading '1' from the stop number
 // for example, the below info comes from
