@@ -1,4 +1,3 @@
-#include "config_mike.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Arduino.h>
@@ -7,6 +6,8 @@
 #include <WiFiManager.h>
 #include <Wire.h>
 #include <tinyxml2.h>
+
+#include "config.h"
 
 #define OLED_RESET 0 // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
